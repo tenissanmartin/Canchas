@@ -65,11 +65,13 @@
   .bloque{background:var(--tarjeta);border:1px solid var(--linea);border-radius:16px;margin-top:18px;padding:16px 18px}
   .bloque h2{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.25rem;margin:0 0 2px}
   .bloque .sub{color:var(--suave);font-size:.9rem;margin:0 0 12px}
-  .bloque .titulo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .bloque .titulo{display:flex;justify-content:space-between;align-items:center;gap:10px 16px;flex-wrap:wrap;margin-bottom:14px}
+  .bloque .titulo .sub{margin:0}
   .acum{display:flex;align-items:center;gap:10px;background:#eaf1f8;border-radius:12px;padding:8px 14px}
   .acum svg{width:26px;height:26px}
   .acum .v{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.6rem;line-height:1;color:var(--azul)}
-  .acum .l{font-size:.78rem;color:var(--suave);line-height:1.2}
+  .acum .l{font-size:.85rem;color:var(--suave);line-height:1.2}
+  .acum > div{display:flex;align-items:baseline;gap:6px}
   .horas{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
   .hora{border-radius:12px;padding:10px 4px 9px;text-align:center;background:#f7f4ec}
   .hora .h{font-weight:600;font-size:.9rem}
@@ -117,7 +119,7 @@
         <p class="sub" id="pronSub">Próximas horas en Villa Raffo</p></div>
       <div class="acum" title="Lluvia acumulada desde las 0 h">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3 4.2 6 7.6 6 11a6 6 0 0 1-12 0c0-3.4 3-6.8 6-11z" fill="#2f6fb0"/></svg>
-        <div><div class="v" id="acumV">–</div><div class="l">mm de lluvia<br>hoy</div></div>
+        <div><span class="v" id="acumV">–</span><span class="l">mm de lluvia hoy</span></div>
       </div>
     </div>
     <div class="horas" id="horas"></div>
