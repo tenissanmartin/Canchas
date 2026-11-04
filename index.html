@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estado de las canchas · Tenis Club San Martín</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fondo:#f4f1ea; --tarjeta:#fffdf8; --tinta:#1d2a22; --suave:#6c7a70; --linea:#e3ddd0;
+    --club:#1f4d36; --club2:#2f6b4c;
+    --polvo:#c8643b; --polvo2:#b5552f;
+    --ok:#1f8a4c; --ok-bg:#e5f4ea; --no:#c2362b; --no-bg:#fbe7e4;
+    --azul:#2f6fb0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--fondo);color:var(--tinta);font-family:Barlow,system-ui,sans-serif}
+  .pagina{max-width:980px;margin:0 auto;padding:22px 18px 18px}
+
+  /* encabezado */
+  .cabecera{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    background:linear-gradient(120deg,var(--club),var(--club2));color:#fff;border-radius:18px;padding:18px 22px;
+    box-shadow:0 6px 18px rgba(31,77,54,.18)}
+  .marca{display:flex;align-items:center;gap:14px}
+  .pelota{width:44px;height:44px;flex:none}
+  .club{font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
+  h1{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:2rem;line-height:1;margin:2px 0 0;letter-spacing:.01em}
+  .resumen{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.15rem;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:8px 16px;
+    display:flex;align-items:center;gap:9px;white-space:nowrap}
+  .resumen .punto{width:11px;height:11px;border-radius:50%;background:#7be3a3;box-shadow:0 0 0 4px rgba(123,227,163,.25)}
+  .resumen.alerta .punto{background:#ff8f84;box-shadow:0 0 0 4px rgba(255,143,132,.25)}
+
+  /* canchas */
+  .grilla{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+  .cancha{background:var(--tarjeta);border:1px solid var(--linea);border-radius:16px;padding:12px 12px 13px;
+    position:relative;transition:transform .2s, box-shadow .2s}
+  .cancha:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.06)}
+  .cancha .tope{display:flex;align-items:baseline;justify-content:space-between;margin:0 2px 8px}
+  .cancha .nombre{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--suave)}
+  .cancha .num{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:2.1rem;line-height:.9}
+  .cancha svg.campo{display:block;width:100%;height:auto;border-radius:10px}
+  .cancha .estado{margin-top:10px;display:flex;align-items:center;gap:8px;font-weight:600;font-size:1rem}
+  .cancha .icono{width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:14px}
+  .cancha .hasta{font-size:.86rem;color:var(--suave);margin:2px 0 0 30px;min-height:1.1em}
+  .cancha.ok{border-color:#cfe8d8}
+  .cancha.ok .estado{color:var(--ok)} .cancha.ok .icono{background:var(--ok)}
+  .cancha.no{border-color:#f0c4bf;background:linear-gradient(#fff9f8,#fff)}
+  .cancha.no .estado{color:var(--no)} .cancha.no .icono{background:var(--no)}
+  .cancha.no svg.campo{filter:saturate(.35) brightness(1.02)}
+  .cancha .img{position:relative}
+  .cancha .franja{position:absolute;inset:0;border-radius:10px;display:none;pointer-events:none;
+    background:repeating-linear-gradient(-45deg,rgba(194,54,43,0) 0 10px,rgba(194,54,43,.22) 10px 20px)}
+  .cancha.no .franja{display:block}
+  .cancha.cargando{opacity:.55}
+
+  /* pronostico */
+  .bloque{background:var(--tarjeta);border:1px solid var(--linea);border-radius:16px;margin-top:18px;padding:16px 18px}
+  .bloque h2{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.25rem;margin:0 0 2px}
+  .bloque .sub{color:var(--suave);font-size:.9rem;margin:0 0 12px}
+  .horas{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+  .hora{border-radius:12px;padding:10px 4px 9px;text-align:center;background:#f7f4ec}
+  .hora .h{font-weight:600;font-size:.9rem}
+  .hora svg{width:42px;height:42px;margin:4px auto 2px;display:block}
+  .hora .p{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:1.15rem}
+  .hora .mm{font-size:.78rem;color:var(--suave)}
+  .hora .barra{height:4px;border-radius:2px;background:#e5e0d4;margin:7px 8px 0;overflow:hidden}
+  .hora .barra i{display:block;height:100%;background:var(--azul)}
+  .hora.ahora{background:#eaf1f8;outline:2px solid #cfe0f1}
+
+  footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--suave);font-size:.85rem;margin:14px 4px 0}
+  footer .aviso{color:var(--no);font-weight:600}
+  footer a{color:inherit}
+
+  @media (max-width:760px){
+    .grilla{grid-template-columns:repeat(2,1fr);gap:10px}
+    .horas{grid-template-columns:repeat(4,1fr)}
+    h1{font-size:1.7rem}
+    .cancha .num{font-size:1.8rem}
+  }
+  @media (max-width:380px){ .resumen{font-size:1rem} }
+</style>
+</head>
+<body>
+<div class="pagina">
+  <header class="cabecera">
+    <div class="marca">
+      <svg class="pelota" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="24" r="22" fill="#d8f24a"/>
+        <path d="M6 14c9 3 13 11 12 21M42 34c-9-3-13-11-12-21" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="club">Club San Martín · Tenis</div>
+        <h1>Estado de las canchas</h1>
+      </div>
+    </div>
+    <div class="resumen" id="resumen"><span class="punto"></span><span id="resumenTxt">Cargando…</span></div>
+  </header>
+
+  <main class="grilla" id="grilla"></main>
+
+  <section class="bloque">
+    <h2>Pronóstico de lluvia</h2>
+    <p class="sub" id="pronSub">Próximas horas en Villa Raffo</p>
+    <div class="horas" id="horas"></div>
+  </section>
+
+  <footer>
+    <span id="actualizado">—</span>
+    <span>Se actualiza solo · Pronóstico: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></span>
+  </footer>
+</div>
+
+<script>
+const SHEET_ID = "1PG3i9REmkVNca0jTKIT0Y7H42AoKoWfwW_cdHV8ZGAk";
+const LAT = -34.607, LON = -58.531;
+const VIEJO_MIN = 40;           // si el monitor no actualiza hace mas de esto, se avisa
+const DEMO = location.hash === "#demo";
+let tramosPorCancha = {}, ultimaAct = null, errorPanel = false;
+
+/* ---------- dibujo de una cancha (vista desde arriba) ---------- */
+function campo(){
+  return `<svg class="campo" viewBox="0 0 200 112" aria-hidden="true">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#cf6a40"/><stop offset="1" stop-color="#b9552e"/></linearGradient></defs>
+    <rect width="200" height="112" rx="10" fill="url(#g)"/>
+    <g fill="none" stroke="#fff" stroke-width="1.6" opacity=".92">
+      <rect x="16" y="12" width="168" height="88"/>
+      <line x1="16" y1="23" x2="184" y2="23"/><line x1="16" y1="89" x2="184" y2="89"/>
+      <line x1="55" y1="23" x2="55" y2="89"/><line x1="145" y1="23" x2="145" y2="89"/>
+      <line x1="55" y1="56" x2="145" y2="56"/>
+      <line x1="16" y1="56" x2="20" y2="56"/><line x1="180" y1="56" x2="184" y2="56"/>
+    </g>
+    <line x1="100" y1="8" x2="100" y2="104" stroke="#1d2a22" stroke-width="2.4" opacity=".75"/>
+    <circle cx="100" cy="8" r="2.4" fill="#1d2a22" opacity=".75"/><circle cx="100" cy="104" r="2.4" fill="#1d2a22" opacity=".75"/>
+  </svg>`;
+}
+
+function armarGrilla(){
+  const g = document.getElementById("grilla");
+  g.innerHTML = "";
+  for (let c = 1; c <= 8; c++){
+    g.insertAdjacentHTML("beforeend",
+      `<article class="cancha cargando" id="c${c}">
+         <div class="tope"><span class="nombre">Cancha</span><span class="num">${c}</span></div>
+         <div class="img">${campo()}<div class="franja"></div></div>
+         <div class="estado"><span class="icono"></span><span class="txt">—</span></div>
+         <div class="hasta"></div>
+       </article>`);
+  }
+}
+
+/* ---------- estado de canchas (planilla publica) ---------- */
+function parseTramos(t){
+  if (!t) return [];
+  return String(t).split(";").map(s => s.trim()).filter(Boolean).map(s => {
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})-(\d{2}):(\d{2})$/);
+    if (!m) return null;
+    return { ini: new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5]), fin: new Date(+m[1], m[2]-1, +m[3], +m[6], +m[7]) };
+  }).filter(Boolean);
+}
+const hhmm = d => d.toLocaleTimeString("es-AR", {hour:"2-digit", minute:"2-digit", hourCycle:"h23"});
+
+function pintarCanchas(){
+  const ahora = new Date();
+  let no = 0;
+  for (let c = 1; c <= 8; c++){
+    const el = document.getElementById("c"+c);
+    const tr = parseTramos(tramosPorCancha[c]).sort((a,b) => a.ini - b.ini);
+    const act = tr.find(t => ahora >= t.ini && ahora < t.fin);
+    el.classList.remove("cargando","ok","no");
+    if (act){
+      let fin = act.fin;
+      tr.forEach(t => { if (t.ini <= fin && t.fin > fin) fin = t.fin; });
+      no++;
+      el.classList.add("no");
+      el.querySelector(".icono").textContent = "✕";
+      el.querySelector(".txt").textContent = "No habilitada";
+      el.querySelector(".hasta").textContent = "hasta las " + hhmm(fin) + " · cancha mojada";
+    } else {
+      el.classList.add("ok");
+      el.querySelector(".icono").textContent = "✓";
+      el.querySelector(".txt").textContent = "Habilitada";
+      el.querySelector(".hasta").textContent = "";
+    }
+  }
+  const r = document.getElementById("resumen");
+  r.classList.toggle("alerta", no > 0);
+  document.getElementById("resumenTxt").textContent =
+    no === 0 ? "Todas las canchas habilitadas" : no === 8 ? "Ninguna cancha habilitada" :
+    `${8-no} de 8 canchas habilitadas`;
+
+  const pie = document.getElementById("actualizado");
+  if (ultimaAct){
+    const min = (ahora - ultimaAct) / 60000;
+    const cuando = ultimaAct.toDateString() === ahora.toDateString() ? "hoy " + hhmm(ultimaAct)
+                 : ultimaAct.toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"}) + " " + hhmm(ultimaAct);
+    pie.innerHTML = "Última actualización: " + cuando +
+      (min > VIEJO_MIN ? ' · <span class="aviso">sin datos recientes, consultá en el club</span>' : "");
+  } else {
+    pie.innerHTML = errorPanel ? '<span class="aviso">No se pudo leer el estado. Reintentando…</span>' : "Cargando…";
+  }
+}
+
+function cargarEstado(){
+  if (DEMO){
+    const d = new Date(), f = n => String(n).padStart(2,"0");
+    const hoy = `${d.getFullYear()}-${f(d.getMonth()+1)}-${f(d.getDate())}`;
+    const fin = new Date(d.getTime() + 75*60000);
+    const tramo = `${hoy} ${f(d.getHours())}:00-${f(fin.getHours())}:${f(fin.getMinutes())}`;
+    tramosPorCancha = {5:tramo,6:tramo,7:tramo,8:tramo};
+    ultimaAct = new Date(d.getTime() - 4*60000);
+    pintarCanchas(); return;
+  }
+  const cb = "cb" + Date.now(), s = document.createElement("script");
+  const limpiar = () => { delete window[cb]; s.remove(); clearTimeout(t); };
+  const t = setTimeout(() => { errorPanel = true; limpiar(); pintarCanchas(); }, 15000);
+  window[cb] = resp => {
+    try {
+      const nuevo = {}; let ult = null;
+      (resp.table.rows || []).forEach(r => {
+        const c = r.c?.[0]?.v, v = r.c?.[1]?.v;
+        if (c) nuevo[Math.round(c)] = v || "";
+        const raw = r.c?.[2]?.v, txt = String(r.c?.[2]?.f ?? raw ?? "");
+        let dt = null, m;
+        if ((m = String(raw).match(/^Date\((\d+),(\d+),(\d+),(\d+),(\d+)/))) dt = new Date(+m[1], +m[2], +m[3], +m[4], +m[5]);
+        else if ((m = txt.match(/(\d{4})-(\d{2})-(\d{2}) (\d{1,2}):(\d{2})/))) dt = new Date(+m[1], m[2]-1, +m[3], +m[4], +m[5]);
+        if (dt && (!ult || dt > ult)) ult = dt;
+      });
+      tramosPorCancha = nuevo; ultimaAct = ult; errorPanel = false;
+    } catch(e){ errorPanel = true; }
+    limpiar(); pintarCanchas();
+  };
+  s.onerror = () => { errorPanel = true; limpiar(); pintarCanchas(); };
+  s.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=Estado&headers=1&tqx=responseHandler:${cb}&_=${Date.now()}`;
+  document.body.appendChild(s);
+}
+
+/* ---------- pronostico (Open-Meteo, gratis, sin clave) ---------- */
+function icono(prob, mm, noche){
+  const sol = noche
+    ? '<path d="M22 8a10 10 0 1 0 8 15 8 8 0 0 1-8-15z" fill="#8aa0c8"/>'
+    : '<circle cx="17" cy="15" r="7" fill="#f4b740"/>';
+  const nube = '<path d="M12 27h17a6 6 0 0 0 0-12 8 8 0 0 0-15-1 6.5 6.5 0 0 0-2 13z" fill="#c9d2dc"/>';
+  const gotas = n => Array.from({length:n},(_,i)=>`<line x1="${14+i*6}" y1="30" x2="${12+i*6}" y2="35" stroke="#2f6fb0" stroke-width="2.2" stroke-linecap="round"/>`).join("");
+  let c;
+  if (mm >= 2 || prob >= 70) c = nube + gotas(3);
+  else if (mm > 0.1 || prob >= 40) c = nube + gotas(1);
+  else if (prob >= 20) c = sol + nube;
+  else c = sol;
+  return `<svg viewBox="0 0 40 40" aria-hidden="true">${c}</svg>`;
+}
+
+function demoPron(){
+  const t=[],p=[],mm=[],d=[]; const b=new Date(); b.setMinutes(0,0,0);
+  const P=[80,65,40,25,10,5,0,0,0], M=[1.8,0.6,0.2,0,0,0,0,0,0];
+  for(let i=0;i<9;i++){const x=new Date(b.getTime()+i*3600000);
+    t.push(x.toISOString().slice(0,16)); p.push(P[i]); mm.push(M[i]); d.push(x.getHours()>=7&&x.getHours()<20?1:0);}
+  return {hourly:{time:t,precipitation:mm,precipitation_probability:p,is_day:d},current:{precipitation:0.4}};
+}
+
+async function cargarPronostico(){
+  const cont = document.getElementById("horas");
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
+      `&hourly=precipitation,precipitation_probability,is_day&current=precipitation` +
+      `&forecast_days=2&timezone=America%2FArgentina%2FBuenos_Aires`;
+    const j = DEMO ? demoPron() : await (await fetch(url)).json();
+    const h = j.hourly, ahora = new Date();
+    let i0 = h.time.findIndex(t => new Date(t) > new Date(ahora.getTime() - 3600000));
+    if (i0 < 0) i0 = 0;
+    let html = "", maxProb = 0, total = 0;
+    for (let i = i0; i < i0 + 8 && i < h.time.length; i++){
+      const t = new Date(h.time[i]), p = h.precipitation_probability[i] ?? 0, mm = h.precipitation[i] ?? 0;
+      maxProb = Math.max(maxProb, p); total += mm;
+      html += `<div class="hora${i === i0 ? " ahora" : ""}">
+        <div class="h">${i === i0 ? "Ahora" : t.getHours() + " h"}</div>
+        ${icono(p, mm, h.is_day[i] === 0)}
+        <div class="p">${p}%</div>
+        <div class="mm">${mm > 0 ? mm.toFixed(1) + " mm" : "sin lluvia"}</div>
+        <div class="barra"><i style="width:${p}%"></i></div></div>`;
+    }
+    cont.innerHTML = html;
+    const llueve = (j.current?.precipitation ?? 0) > 0;
+    document.getElementById("pronSub").textContent =
+      (llueve ? "Está lloviendo. " : "") +
+      (maxProb < 20 ? "No se espera lluvia en las próximas 8 horas." :
+       `Probabilidad máxima ${maxProb}% · ${total.toFixed(1)} mm esperados en 8 horas.`);
+  } catch(e){
+    cont.innerHTML = '<div class="sub">No se pudo cargar el pronóstico.</div>';
+  }
+}
+
+armarGrilla();
+cargarEstado(); cargarPronostico();
+setInterval(cargarEstado, 60*1000);
+setInterval(pintarCanchas, 15*1000);
+setInterval(cargarPronostico, 15*60*1000);
+</script>
+</body>
+</html>
