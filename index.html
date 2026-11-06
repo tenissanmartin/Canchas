@@ -140,6 +140,7 @@
   footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--suave);font-size:.85rem;margin:14px 4px 0}
   footer .aviso{color:var(--no);font-weight:600}
   footer a{color:inherit}
+  footer .version{flex-basis:100%;text-align:right;font-size:.7rem;opacity:.6}   /* cambiarla al publicar */
 
   @media (max-width:760px){
     .grilla{grid-template-columns:repeat(2,1fr);gap:10px}
@@ -202,6 +203,7 @@
   <footer>
     <span id="actualizado">—</span>
     <span>Se actualiza solo · Pronóstico: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></span>
+    <span class="version">versión 2026.11.06</span>
   </footer>
 </div>
 
@@ -325,6 +327,7 @@ function cargarEstado(){
     tramosPorCancha = {5:tramo,6:tramo,7:tramo,8:tramo};
     nivelPorCancha = {5:"charco",6:"charco",7:"espejo",8:"humeda"};
     ultimaAct = new Date(d.getTime() - 4*60000);
+    llueveAhora = true; ponerPronSub();
     pintarCanchas(); return;
   }
   const cb = "cb" + Date.now(), s = document.createElement("script");
@@ -332,10 +335,12 @@ function cargarEstado(){
   const t = setTimeout(() => { errorPanel = true; limpiar(); pintarCanchas(); }, 15000);
   window[cb] = resp => {
     try {
-      const nuevo = {}, nuevoHum = {}, nuevoNiv = {}; let ult = null;
+      const nuevo = {}, nuevoHum = {}, nuevoNiv = {}; let ult = null, llueve = false;
       (resp.table.rows || []).forEach(r => {
         const c = r.c?.[0]?.v, v = r.c?.[1]?.v;
         if (c){ nuevo[Math.round(c)] = v || ""; nuevoHum[Math.round(c)] = r.c?.[3]?.v || ""; nuevoNiv[Math.round(c)] = r.c?.[4]?.v || ""; }
+        // F: "si" si llueve ahora. Lo decide el monitor con varios modelos del clima (uno solo se equivoca)
+        if (String(r.c?.[5]?.v ?? "").toLowerCase() === "si") llueve = true;
         const raw = r.c?.[2]?.v, txt = String(r.c?.[2]?.f ?? raw ?? "");
         let dt = null, m;
         if ((m = String(raw).match(/^Date\((\d+),(\d+),(\d+),(\d+),(\d+)/))) dt = new Date(+m[1], +m[2], +m[3], +m[4], +m[5]);
@@ -343,6 +348,7 @@ function cargarEstado(){
         if (dt && (!ult || dt > ult)) ult = dt;
       });
       tramosPorCancha = nuevo; humedaPorCancha = nuevoHum; nivelPorCancha = nuevoNiv; ultimaAct = ult; errorPanel = false;
+      llueveAhora = llueve; ponerPronSub();
     } catch(e){ errorPanel = true; }
     limpiar(); pintarCanchas();
   };
@@ -439,14 +445,35 @@ function ultimaLluvia(h, ahora, llueve){
   return `Última lluvia: ${cuando}, ${total.toFixed(1).replace(".", ",")} mm.`;
 }
 
+// Varios modelos del clima: los mm de cada hora son lo que dicen AL MENOS 2 (el segundo valor mas alto),
+// porque uno solo puede marcar lluvia que no hay. Lo demas (temperatura, viento, probabilidad) del modelo principal.
+const MODELOS = ["best_match", "gfs_seamless", "ecmwf_ifs025", "icon_seamless", "gem_seamless", "jma_seamless"];
+function consenso(j){
+  const h = j.hourly, out = {time: h.time};
+  for (const k of ["precipitation_probability", "is_day", "temperature_2m", "wind_speed_10m", "wind_gusts_10m"])
+    out[k] = h[k + "_best_match"] ?? h[k] ?? [];
+  const cols = Object.keys(h).filter(k => k.startsWith("precipitation_") && !k.startsWith("precipitation_probability"));
+  out.precipitation = h.time.map((_, i) => {
+    const v = cols.map(c => h[c][i]).filter(x => x != null).sort((a, b) => b - a);
+    return v.length >= 2 ? v[1] : 0;
+  });
+  return {hourly: out};
+}
+
+let textoPron = "";
+function ponerPronSub(){
+  const el = document.getElementById("pronSub");
+  if (el) el.textContent = (llueveAhora ? "Está lloviendo. " : "") + textoPron;
+}
+
 async function cargarPronostico(){
   const cont = document.getElementById("horas");
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
       `&hourly=precipitation,precipitation_probability,is_day,temperature_2m,wind_speed_10m,wind_gusts_10m` +
-      `&current=precipitation&past_days=7&forecast_days=2&wind_speed_unit=kmh` +
+      `&models=${MODELOS.join(",")}&past_days=7&forecast_days=2&wind_speed_unit=kmh` +
       `&timezone=America%2FArgentina%2FBuenos_Aires`;
-    const j = DEMO ? demoPron() : await (await fetch(url)).json();
+    const j = DEMO ? demoPron() : consenso(await (await fetch(url)).json());
     const h = j.hourly, ahora = new Date();
     let i0 = h.time.findIndex(t => new Date(t) > new Date(ahora.getTime() - 3600000));
     if (i0 < 0) i0 = 0;
@@ -482,13 +509,11 @@ async function cargarPronostico(){
       return (d.toDateString() === hoy && d <= ahora) ? s + (h.precipitation[i] || 0) : s;
     }, 0);
     document.getElementById("acumV").textContent = acum.toFixed(1).replace(".", ",");
-    const llueve = (j.current?.precipitation ?? 0) > 0;
-    if (llueve !== llueveAhora){ llueveAhora = llueve; pintarCanchas(); }
-    document.getElementById("pronSub").textContent =
-      (llueve ? "Está lloviendo. " : "") +
-      (maxProb < 20 ? "No se espera lluvia en las próximas 8 horas." :
-       `Probabilidad máxima ${maxProb}% · ${total.toFixed(1).replace(".", ",")} mm esperados en 8 horas.`);
-    document.getElementById("ultimaLluvia").textContent = ultimaLluvia(h, ahora, llueve);
+    // "está lloviendo" ya no sale de aca (un solo modelo se equivoca): lo pone el monitor en la planilla
+    textoPron = maxProb < 20 ? "No se espera lluvia en las próximas 8 horas." :
+       `Probabilidad máxima ${maxProb}% · ${total.toFixed(1).replace(".", ",")} mm esperados en 8 horas.`;
+    ponerPronSub();
+    document.getElementById("ultimaLluvia").textContent = ultimaLluvia(h, ahora, llueveAhora);
   } catch(e){
     cont.innerHTML = '<div class="sub">No se pudo cargar el pronóstico.</div>';
   }
