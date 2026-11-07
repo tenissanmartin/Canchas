@@ -109,6 +109,9 @@
   .pasos li{display:flex;gap:12px;align-items:flex-start;line-height:1.4}
   .pasos .n{flex:none;width:28px;height:28px;border-radius:50%;background:#eef3ef;color:var(--club);
     font-family:"Barlow Condensed",sans-serif;font-weight:700;display:grid;place-items:center}
+  .aviso-monitor{margin:12px 0 0;padding:10px 14px;border-radius:12px;background:#fff6e5;border:1px solid #f1dcb0;
+    color:#6b4e12;line-height:1.4;font-size:.95rem}
+  .aviso-monitor::before{content:"⚠ "}
   .aviso-prueba{margin:14px 18px 18px;padding:12px 14px;border-radius:12px;background:#fff6e5;border:1px solid #f1dcb0;
     color:#6b4e12;line-height:1.4;font-size:.95rem}
   .etiqueta{display:inline-block;margin-left:8px;vertical-align:middle;font-family:Barlow,sans-serif;font-size:.72rem;
@@ -164,6 +167,7 @@
     </div>
     <div class="resumen" id="resumen"><span class="punto"></span><span id="resumenTxt">Cargando…</span></div>
   </header>
+  <div class="aviso-monitor" id="avisoMonitor" hidden></div>
 
   <main class="grilla" id="grilla"></main>
 
@@ -203,7 +207,7 @@
   <footer>
     <span id="actualizado">—</span>
     <span>Se actualiza solo · Pronóstico: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></span>
-    <span class="version">versión 2026.11.06</span>
+    <span class="version">versión 2026.11.06-2</span>
   </footer>
 </div>
 
@@ -335,12 +339,14 @@ function cargarEstado(){
   const t = setTimeout(() => { errorPanel = true; limpiar(); pintarCanchas(); }, 15000);
   window[cb] = resp => {
     try {
-      const nuevo = {}, nuevoHum = {}, nuevoNiv = {}; let ult = null, llueve = false;
+      const nuevo = {}, nuevoHum = {}, nuevoNiv = {}; let ult = null, llueve = false, aviso = "";
       (resp.table.rows || []).forEach(r => {
         const c = r.c?.[0]?.v, v = r.c?.[1]?.v;
         if (c){ nuevo[Math.round(c)] = v || ""; nuevoHum[Math.round(c)] = r.c?.[3]?.v || ""; nuevoNiv[Math.round(c)] = r.c?.[4]?.v || ""; }
         // F: "si" si llueve ahora. Lo decide el monitor con varios modelos del clima (uno solo se equivoca)
         if (String(r.c?.[5]?.v ?? "").toLowerCase() === "si") llueve = true;
+        // G: aviso del monitor (ej. "el pronostico dice que llueve pero no puedo ver las camaras")
+        if (r.c?.[6]?.v) aviso = String(r.c[6].v);
         const raw = r.c?.[2]?.v, txt = String(r.c?.[2]?.f ?? raw ?? "");
         let dt = null, m;
         if ((m = String(raw).match(/^Date\((\d+),(\d+),(\d+),(\d+),(\d+)/))) dt = new Date(+m[1], +m[2], +m[3], +m[4], +m[5]);
@@ -348,7 +354,7 @@ function cargarEstado(){
         if (dt && (!ult || dt > ult)) ult = dt;
       });
       tramosPorCancha = nuevo; humedaPorCancha = nuevoHum; nivelPorCancha = nuevoNiv; ultimaAct = ult; errorPanel = false;
-      llueveAhora = llueve; ponerPronSub();
+      llueveAhora = llueve; ponerPronSub(); ponerAviso(aviso);
     } catch(e){ errorPanel = true; }
     limpiar(); pintarCanchas();
   };
@@ -458,6 +464,13 @@ function consenso(j){
     return v.length >= 2 ? v[1] : 0;
   });
   return {hourly: out};
+}
+
+function ponerAviso(txt){
+  const el = document.getElementById("avisoMonitor");
+  if (!el) return;
+  el.textContent = txt || "";
+  el.hidden = !txt;
 }
 
 let textoPron = "";
